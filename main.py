@@ -22,6 +22,26 @@ def reader_csv(arr):
         #print(f'Всего в файле {count} строк.')
 
 
+def dispertion(arr):
+    pass
+
+
+def mean_y(arr):
+    sumy = 0
+    for i in range(len(arr)):
+        sumy += arr[i][1]
+    avgy = sumy / len(arr)
+    return avgy
+
+
+def mean_x(arr):
+    sumx = 0
+    for i in range(len(arr)):
+        sumx += arr[i][0]
+    avgx = sumx / len(arr)
+    return avgx
+
+
 def find_max_x(arr):
     max0 = 0
     for i in range(len(arr)):
@@ -68,12 +88,8 @@ def plot(arr):
 
 
 def cor(arr):
-    sumx, sumy = 0, 0
-    for i in range(len(arr)):
-        sumx += arr[i][0]
-        sumy += arr[i][1]
-    avgx = sumx / len(arr)
-    avgy = sumy / len(arr)
+    avgx = mean_x(arr)
+    avgy = mean_y(arr)
     numerator, denumenator1, denumenator2 = 0, 0, 0
     for i in range(len(arr)):
         numerator += (arr[i][0] - avgx) * (arr[i][1] - avgy)
@@ -84,12 +100,8 @@ def cor(arr):
 
 
 def find_b1(arr):
-    sumx, sumy = 0, 0
-    for i in range(len(arr)):
-        sumx += arr[i][0]
-        sumy += arr[i][1]
-    avgx = sumx / len(arr)
-    avgy = sumy / len(arr)
+    avgx = mean_x(arr)
+    avgy = mean_y(arr)
     sumx, sumy = 0, 0
     for i in range(len(arr)):
         sumx += (arr[i][0] - avgx) * (arr[i][0] - avgx)
@@ -101,12 +113,8 @@ def find_b1(arr):
 
 
 def find_b0(arr):
-    sumx, sumy = 0, 0
-    for i in range(len(arr)):
-        sumx += arr[i][0]
-        sumy += arr[i][1]
-    avgx = sumx / len(arr)
-    avgy = sumy / len(arr)
+    avgx = mean_x(arr)
+    avgy = mean_y(arr)
     b0 = avgy - avgx * find_b1(arr)
     return b0
 
@@ -134,15 +142,12 @@ def plot_line(arr):
 def find_std_error_hs_grad(arr):
     #ищем среднее отклонение наших величин от регрессионной прямой
     s = 0
-    sumx = 0
     b0 = find_b0(arr)
     b1 = find_b1(arr)
     for i in range(len(arr)):
         s += (arr[i][1] - (b0 + b1 * arr[i][0])) * (arr[i][1] - (b0 + b1 * arr[i][0]))
     s = s / (len(arr) - 2)
-    for i in range(len(arr)):
-        sumx += arr[i][0]
-    avgx = sumx / len(arr)
+    avgx = mean_x(arr)
     sumx = 0
     for i in range(len(mas)):
         sumx += (mas[i][0] - avgx) * (mas[i][0] - avgx)
@@ -179,7 +184,7 @@ if __name__ == '__main__':
     print('corelation:', cor(mas))
     print('R2 = ', cor(mas)*cor(mas))
     print('уравнение регрессионной прямой: y = ', round(find_b0(mas), 2), ' ', round(find_b1(mas), 2), 'x', sep='')
-    print('Ошибки коэффициентов регрессии:')
+    print('std err:')
     print('b1 =', find_std_error_hs_grad(mas))
     print('b0 = ', find_std_error_intercept(mas))
     print("Фактическое значение t критерия Cтьюдента для b0:", find_t_value_b0(mas))
