@@ -22,8 +22,20 @@ def reader_csv(arr):
         #print(f'Всего в файле {count} строк.')
 
 
-def dispertion(arr):
-    pass
+def numerator_dispertion_x(arr):
+    avgx = mean_x(arr)
+    d = 0
+    for i in range(len(arr)):
+        d += (arr[i][0] - avgx) * (arr[i][0] - avgx)
+    return d
+
+
+def numerator_dispertion_y(arr):
+    avgy = mean_y(arr)
+    d = 0
+    for i in range(len(arr)):
+        d += (arr[i][1] - avgy) * (arr[i][1] - avgy)
+    return d
 
 
 def mean_y(arr):
@@ -90,32 +102,25 @@ def plot(arr):
 def cor(arr):
     avgx = mean_x(arr)
     avgy = mean_y(arr)
-    numerator, denumenator1, denumenator2 = 0, 0, 0
+    numerator, denumenator = 0, 0
     for i in range(len(arr)):
         numerator += (arr[i][0] - avgx) * (arr[i][1] - avgy)
-        denumenator1 += (arr[i][0] - avgx) * (arr[i][0] - avgx)
-        denumenator2 += (arr[i][1] - avgy) * (arr[i][1] - avgy)
-    r = round(numerator / (math.sqrt(denumenator1) * math.sqrt(denumenator2)), 2)
+    denumenator = numerator_dispertion_x(arr) * numerator_dispertion_y(arr)
+    r = numerator / (math.sqrt(denumenator))
     return r
 
 
 def find_b1(arr):
-    avgx = mean_x(arr)
-    avgy = mean_y(arr)
-    sumx, sumy = 0, 0
-    for i in range(len(arr)):
-        sumx += (arr[i][0] - avgx) * (arr[i][0] - avgx)
-        sumy += (arr[i][1] - avgy) * (arr[i][1] - avgy)
-    dx = math.sqrt(sumx / (len(arr) - 1))
-    dy = math.sqrt(sumy / (len(arr) - 1))
-    b1 = dy/dx * cor(arr)
+    sx = numerator_dispertion_x(arr)
+    sy = numerator_dispertion_y(arr)
+    dx = math.sqrt(sx / (len(arr) - 1))
+    dy = math.sqrt(sy / (len(arr) - 1))
+    b1 = math.sqrt(sy)/math.sqrt(sx) * cor(arr)
     return b1
 
 
 def find_b0(arr):
-    avgx = mean_x(arr)
-    avgy = mean_y(arr)
-    b0 = avgy - avgx * find_b1(arr)
+    b0 = mean_y(arr) - mean_x(arr) * find_b1(arr)
     return b0
 
 
@@ -140,18 +145,14 @@ def plot_line(arr):
 
 
 def find_std_error_hs_grad(arr):
-    #ищем среднее отклонение наших величин от регрессионной прямой
     s = 0
     b0 = find_b0(arr)
     b1 = find_b1(arr)
+    # ищем среднее отклонение наших величин от регрессионной прямой
     for i in range(len(arr)):
         s += (arr[i][1] - (b0 + b1 * arr[i][0])) * (arr[i][1] - (b0 + b1 * arr[i][0]))
-    s = s / (len(arr) - 2)
-    avgx = mean_x(arr)
-    sumx = 0
-    for i in range(len(mas)):
-        sumx += (mas[i][0] - avgx) * (mas[i][0] - avgx)
-    sb = s / sumx
+    s /= (len(arr) - 2)
+    sb = s / numerator_dispertion_x(arr)
     return math.sqrt(sb)
 
 
@@ -177,22 +178,40 @@ def F_critery(arr):
     return f
 
 
+def conclusion(arr):
+    #критерий фишера для проверки значимости уравнения регрессии
+    a = F_critery(arr)
+    b = scipy.stats.f.ppf(q=1-.05, dfn=1, dfd=len(arr) - 2)
+    # анализ полученных результатов
+    if scipy.stats.t.sf(abs(find_t_value_b1(arr)), df=len(arr) - 2) < 0.05 and a > b:
+        print("Взаимосвязь между нашими переменными статистически значима")
+    elif scipy.stats.t.sf(abs(find_t_value_b1(arr)), df=len(arr) - 2) > 0.05:
+        print("Не можем отклонить нулевую гипотезу об отсутствии взаимосвязи между нашими переменными")
+    else:
+        print("Получили статистическую незначимость уравнения регрессии")
+
+
 if __name__ == '__main__':
     a = []
     reader_csv(a)
     mas = np.array(a)
-    print('corelation:', cor(mas))
-    print('R2 = ', cor(mas)*cor(mas))
+    print('corelation:', round(cor(mas), 2))
+    print('R2 = ', round(cor(mas)*cor(mas), 2))
     print('уравнение регрессионной прямой: y = ', round(find_b0(mas), 2), ' ', round(find_b1(mas), 2), 'x', sep='')
     print('std err:')
-    print('b1 =', find_std_error_hs_grad(mas))
-    print('b0 = ', find_std_error_intercept(mas))
-    print("Фактическое значение t критерия Cтьюдента для b0:", find_t_value_b0(mas))
-    print("Фактическое значение t критерия Cтьюдента для b1:", find_t_value_b1(mas))
-    print('Вероятность получить такое или еще более выраженное отклонение для b0:',
+    print('hs_grad(b1) =', round(find_std_error_hs_grad(mas), 4))
+    print('intercept(b0) = ', round(find_std_error_intercept(mas), 4))
+    print("Фактическое значение t критерия Cтьюдента для b0:", round(find_t_value_b0(mas), 2))
+    print("Фактическое значение t критерия Cтьюдента для b1:", round(find_t_value_b1(mas), 2))
+    print('Вероятность получить такое или еще более выраженное отклонение для b0,'
+          ' если верна гипотеза об отсутствии взаимосвязи между переменными:',
           scipy.stats.t.sf(abs(find_t_value_b0(mas)), df=len(mas) - 2))
-    print('Вероятность получить такое или еще более выраженное отклонение для b1:',
+    print('Вероятность получить такое или еще более выраженное отклонение для b1,'
+          'если верна гипотеза об отсутствии взаимосвязи между переменными:',
           scipy.stats.t.sf(abs(find_t_value_b1(mas)), df=len(mas) - 2))
     print('Эмпирическое значение критерия Фишера:', F_critery(mas))
     print('Критическое значение критерия Фишера:', scipy.stats.f.ppf(q=1-.05, dfn=1, dfd=len(mas) - 2))
+    print()
+    conclusion(mas)
     plot_line(mas)
+
